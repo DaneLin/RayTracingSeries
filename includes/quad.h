@@ -6,7 +6,7 @@
 
 #include "hittable.h"
 #include "hittable_list.h"
-
+#include "ray.h"
 
 
 class quad : public hittable
@@ -19,6 +19,8 @@ public:
 		normal = unit_vector(n);
 		D = dot(normal, Q);
 		w = n / dot(n, n);
+
+		area = n.length();
 
 		set_bounding_box();
 	}
@@ -69,6 +71,23 @@ public:
 		return true;
 	}
 
+	double pdf_value(const point3& origin, const vec3& v) const override
+	{
+		hit_record rec;
+		if (!this->hit(ray(origin,v,0), interval(0.001, infinity), rec)) return 0;
+
+		auto distance_squared = rec.t * rec.t * v.length_squared();
+		auto cosine = fabs(dot(v, rec.normal) / v.length());
+
+		return distance_squared / (cosine * area);
+	}
+
+	vec3 random(const point3& origin) const override
+	{
+		auto p = Q + (random_double() * u) + (random_double() * v);
+		return p - origin;
+	}
+
 private:
 	point3 Q;
 	vec3 u, v;
@@ -77,6 +96,7 @@ private:
 	vec3 normal;
 	double D;
 	vec3 w;
+	double area;
 };
 
 
